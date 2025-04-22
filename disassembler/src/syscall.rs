@@ -264,9 +264,9 @@ pub struct SyscallList(pub Vec<Syscall>);
 
 impl SyscallList {
     /// Creates a new SyscallList
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// A new instance of `SyscallList` with an empty vector of syscalls
     pub fn new() -> Self {
         SyscallList(Vec::new())

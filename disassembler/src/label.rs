@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use crate::consts::Address;
+use std::fmt::Display;
 
 /// An enum to represent the type of label
 #[derive(Debug)]
@@ -39,27 +39,26 @@ pub struct LabelList(pub Vec<Label>);
 
 impl LabelList {
     /// Creates a new LabelList
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// A new instance of `LabelList` with an empty vector of instructions
     pub fn new() -> Self {
         LabelList(Vec::new())
     }
 
     /// get a label by its address
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `address` - The address of the label to search for
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// An `Option` containing a reference to the label if found, or `None` if not found
     pub fn get_by_address(&self, address: Address) -> Option<&Label> {
         self.0.iter().find(|label| label.address == address)
     }
-
 }
 
 impl Display for LabelList {

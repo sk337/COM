@@ -1,4 +1,6 @@
 {
     "workbench.colorTheme": "Catppuccin Frappé",
-    "workbench.iconTheme": "catppuccin-frappe"
+    "workbench.iconTheme": "catppuccin-frappe",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true
 }

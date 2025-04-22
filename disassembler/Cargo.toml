@@ -2,6 +2,7 @@
 name = "disassembler"
 version = "0.1.0"
 edition = "2024"
+authors = ["sk337 <me@pk3.zip>"]
 
 [dependencies]
 iced-x86 = "1.21.0"
