@@ -1,0 +1,12 @@
+root = true
+
+[*]
+indent_size = 2
+indent_style = space
+
+[*.{s,asm,as}]
+indent_size = 4
+
+[{Dockerfile,Makefile}]
+indent_style = tab
+indent_size = 4
