@@ -28,3 +28,7 @@ exit:
     mov ah, 0x4C
     xor al, al        ; return code 0
     int 0x21
+    ret
+    mov ah, 0x4C
+    xor al, al        ; return code 0
+    int 0x21
