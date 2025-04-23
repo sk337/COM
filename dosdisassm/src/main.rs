@@ -41,6 +41,12 @@ struct Args {
 fn main() -> io::Result<()> {
     let args = Args::parse();
 
+    if args.input.extension().map_or(true, |ext| ext != "com") {
+        eprintln!(
+            "Warn: Input file should have a .COM extension. this program will treat **ANY** file as a .COM file due to the nature of the DOS .COM file format not existing and being raw bytecode"
+        );
+    }
+
     let mut file = File::open(&args.input)?;
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;

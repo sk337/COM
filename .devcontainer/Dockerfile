@@ -30,6 +30,9 @@ RUN apt-get update && \
 	libfreetype-dev \
 	libxkbfile-dev \
 	libxrandr-dev \
+	imagemagick \
+	librsvg2-bin \
+	icnsutils \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
