@@ -42,7 +42,7 @@ function GetInstallDir(Default: String): String;
 var
   IsAdmin: Boolean;
 begin
-  IsAdmin := IsAdminLoggedOn;
+  IsAdmin := IsActuallyAdmin;
   if IsAdmin then
     Result := ExpandConstant('{pf64}\\{#MyAppName}')
   else
@@ -71,7 +71,7 @@ var
 begin
   if CurStep = ssPostInstall then begin
     if WizardIsTaskSelected('addtopath') then begin
-      if IsAdminLoggedOn then
+      if IsActuallyAdmin then
         RootKey := HKEY_LOCAL_MACHINE
       else
         RootKey := HKEY_CURRENT_USER;
@@ -80,7 +80,7 @@ begin
   end;
 end;
 
-function IsAdminLoggedOn: Boolean;
+function IsActuallyAdmin: Boolean;
 begin
   Result := (GetShellFolder('commonappdata') <> '');
 end;
