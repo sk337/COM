@@ -94,7 +94,7 @@ jobs:
 
       - name: Run Inno Setup
         run: |
-          iscc scripts/installer.iss
+          iscc installer.iss
           move dosdisassm-setup.exe dosdisassm-${{ steps.vars.outputs.hash }}-windows-x64-setup.exe
 
       - name: Upload Artifacts
