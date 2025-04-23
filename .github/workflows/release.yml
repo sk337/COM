@@ -1,0 +1,137 @@
+name: Cross-Platform Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm ruby ruby-dev build-essential
+          sudo gem install --no-document fpm
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Get commit hash
+        id: vars
+        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Package portable zip
+        run: |
+          mkdir -p dist
+          cp target/release/dosdisassm dist/
+          zip -j dosdisassm-${{ steps.vars.outputs.hash }}-linux-x86_64-portable.zip dist/*
+
+      - name: Package portable tar.gz
+        run: |
+          tar czvf dosdisassm-${{ steps.vars.outputs.hash }}-linux-x86_64-portable.tar.gz -C dist .
+
+      - name: Build .deb
+        run: |
+          fpm -s dir -t deb -n dosdisassm -v 1.0.0 --architecture amd64 --prefix /usr/local/bin dist/dosdisassm
+          mv dosdisassm_1.0.0_amd64.deb dosdisassm-${{ steps.vars.outputs.hash }}-linux-x86_64.deb
+
+      - name: Build .rpm
+        run: |
+          fpm -s dir -t rpm -n dosdisassm -v 1.0.0 --architecture amd64 --prefix /usr/local/bin dist/dosdisassm
+          mv dosdisassm-1.0.0-1.x86_64.rpm dosdisassm-${{ steps.vars.outputs.hash }}-linux-x86_64.rpm
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dosdisassm-linux-artifacts
+          path: |
+            dosdisassm-${{ steps.vars.outputs.hash }}-linux-x86_64-portable.zip
+            dosdisassm-${{ steps.vars.outputs.hash }}-linux-x86_64-portable.tar.gz
+            dosdisassm-${{ steps.vars.outputs.hash }}-linux-x86_64.deb
+            dosdisassm-${{ steps.vars.outputs.hash }}-linux-x86_64.rpm
+
+  build-windows:
+    name: Build on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Get commit hash
+        id: vars
+        shell: bash
+        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Package portable zip
+        run: |
+          mkdir dist
+          copy target\release\dosdisassm.exe dist\
+          powershell Compress-Archive -Path dist\* -DestinationPath dosdisassm-${{ steps.vars.outputs.hash }}-windows-x64-portable.zip
+
+      - name: Run Inno Setup
+        run: |
+          iscc scripts/installer.iss
+          move dosdisassm-setup.exe dosdisassm-${{ steps.vars.outputs.hash }}-windows-x64-setup.exe
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dosdisassm-windows-artifacts
+          path: |
+            dosdisassm-${{ steps.vars.outputs.hash }}-windows-x64-portable.zip
+            dosdisassm-${{ steps.vars.outputs.hash }}-windows-x64-setup.exe
+
+  build-macos:
+    name: Build on macOS
+    strategy:
+      matrix:
+        arch: [x86_64-apple-darwin, aarch64-apple-darwin]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust target
+        run: rustup target add ${{ matrix.arch }}
+
+      - name: Build release
+        run: cargo build --release --target ${{ matrix.arch }}
+
+      - name: Get commit hash
+        id: vars
+        run: echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Package ZIP
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.arch }}/release/dosdisassm dist/
+          zip -j dosdisassm-${{ steps.vars.outputs.hash }}-macos-${{ matrix.arch == 'x86_64-apple-darwin' && 'x86_64' || 'aarch64' }}.zip dist/*
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dosdisassm-macos-${{ matrix.arch }}
+          path: dosdisassm-${{ steps.vars.outputs.hash }}-macos-${{ matrix.arch == 'x86_64-apple-darwin' && 'x86_64' || 'aarch64' }}.zip

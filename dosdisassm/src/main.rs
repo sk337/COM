@@ -52,6 +52,7 @@ fn main() -> io::Result<()> {
         write_indent: args.indent,
         offset_comments: args.offsets,
         syscall_comments: args.syscalls,
+        write_bytes: args.bytes,
     };
 
     match args.output {

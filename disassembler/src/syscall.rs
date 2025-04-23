@@ -277,3 +277,90 @@ impl SyscallList {
         self.0.iter().find(|syscall| syscall.address == address)
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 1.  Numeric ↔ enum conversion
+    // ──────────────────────────────────────────────────────────────────────────
+    #[test]
+    fn as_u16_returns_expected_value() {
+        assert_eq!(SyscallType::DisplayString.as_u16(), 0x09);
+        assert_eq!(SyscallType::TerminateWithCode.as_u16(), 0x4C);
+    }
+
+    #[test]
+    fn from_u16_roundtrips_known_values() {
+        // Typical legal value
+        let code = 0x21;
+        let sc = SyscallType::from_u16(code).expect("0x21 is within range");
+        assert_eq!(sc.as_u16(), code);
+
+        // Upper boundary (0x6C) should succeed
+        assert_eq!(
+            SyscallType::from_u16(0x6C),
+            Some(SyscallType::ExtendedOpenCreateFile)
+        );
+
+        // Anything above the table must be rejected
+        assert!(SyscallType::from_u16(0x6D).is_none());
+        assert!(SyscallType::from_u16(0xFFFF).is_none());
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 2.  Display formatting
+    // ──────────────────────────────────────────────────────────────────────────
+    #[test]
+    fn syscalltype_display_shows_name_and_hex() {
+        let shown = format!("{}", SyscallType::DisplayString);
+        assert_eq!(shown, "DisplayString 0x09");
+
+        let shown2 = format!("{}", SyscallType::TerminateWithCode);
+        assert_eq!(shown2, "TerminateWithCode 0x4c");
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 3.  Syscall & SyscallList behaviour
+    // ──────────────────────────────────────────────────────────────────────────
+    fn sample_syscall(addr: Address) -> Syscall {
+        Syscall {
+            number: SyscallType::DisplayString,
+            address: addr,
+        }
+    }
+
+    #[test]
+    fn new_syscall_list_is_empty() {
+        let list = SyscallList::new();
+        assert!(list.0.is_empty());
+    }
+
+    #[test]
+    fn get_by_address_finds_correct_syscall() {
+        let mut list = SyscallList::new();
+        let sc = sample_syscall(0x1234);
+        list.0.push(sc);
+
+        let found = list.get_by_address(0x1234).expect("Syscall must exist");
+        assert_eq!(found, &sc);
+
+        // Absent address should yield None
+        assert!(list.get_by_address(0xBEEF).is_none());
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 4.  Equality semantics for Syscall
+    // ──────────────────────────────────────────────────────────────────────────
+    #[test]
+    fn syscall_equality_is_structural() {
+        let a = sample_syscall(0x0100);
+        let b = sample_syscall(0x0100);
+        let c = sample_syscall(0x0101);
+
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+    }
+}

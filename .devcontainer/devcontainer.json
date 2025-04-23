@@ -13,7 +13,10 @@
 				"Catppuccin.catppuccin-vsc",
 				"Catppuccin.catppuccin-vsc-icons",
 				"EditorConfig.EditorConfig",
-				"maziac.asm-code-lens"
+				"maziac.asm-code-lens",
+				"github.vscode-github-actions",
+				"chouzz.vscode-innosetup",
+				"alefragnani.pascal"
 			]
 		}
 	},

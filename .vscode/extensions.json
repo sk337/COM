@@ -3,6 +3,9 @@
         "catppuccin.catppuccin-vsc-icons",
         "catppuccin.catppuccin-vsc",
         "editorconfig.editorconfig",
-        "maziac.asm-code-lens"
+        "maziac.asm-code-lens",
+        "github.vscode-github-actions",
+        "chouzz.vscode-innosetup",
+        "alefragnani.pascal"
     ]
 }

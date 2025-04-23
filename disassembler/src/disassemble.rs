@@ -6,10 +6,10 @@ use iced_x86::{
     Register,
 };
 use std::collections::hash_map;
-use std::fmt::Display;
-use std::io::{self, Write};
+use std::fmt::{self, Display};
+use std::io::{self, Cursor, Write};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// A wrapper type around Vec<Instruction> for implementing Display
 pub struct InstructionList(pub Vec<Instruction>);
 
@@ -33,7 +33,7 @@ impl Display for InstructionList {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// A struct for disassembling a binary file
 pub struct Disassembler {
     /// A list of labels in the disassembled code
@@ -62,6 +62,18 @@ pub struct DisassemblerOptions {
     pub write_bytes: bool,
 }
 
+impl Default for DisassemblerOptions {
+    fn default() -> Self {
+        DisassemblerOptions {
+            write_labels: true,
+            write_indent: true,
+            offset_comments: false,
+            syscall_comments: false,
+            write_bytes: false,
+        }
+    }
+}
+
 impl Disassembler {
     /// Creates a new disassembler from the given binary data
     ///
@@ -76,7 +88,7 @@ impl Disassembler {
     /// # Example
     ///
     /// ```
-    /// use disassembler::Disassembler;
+    /// use disassembler::disassemble::Disassembler;
     ///
     /// let data = vec![0xB8, 0x04, 0x00, 0xCD, 0x21]; // Example binary data
     /// let disassembler = Disassembler::new(data);
@@ -170,6 +182,27 @@ impl Disassembler {
     }
 
     /// Disassembles the the code to a stream
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - A mutable reference to a writer implementing the `Write` trait
+    /// * `opts` - A struct containing options for the disassembler
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating success or failure
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use std::io::stdout;
+    /// use disassembler::disassemble::{Disassembler, DisassemblerOptions};
+    ///
+    /// let data = vec![0xB8, 0x04, 0x00, 0xCD, 0x21]; // Example binary data
+    /// let disassembler = Disassembler::new(data);
+    /// disassembler.disassemble_stream(&mut stdout(), DisassemblerOptions::default());
+    /// ```
+    ///
     pub fn disassemble_stream<W: Write>(
         &self,
         f: &mut W,
@@ -177,7 +210,6 @@ impl Disassembler {
     ) -> io::Result<()> {
         let mut formatter = NasmFormatter::new();
         formatter.options_mut().set_digit_separator("'");
-        formatter.options_mut().set_first_operand_char_index(12);
         formatter.options_mut().set_hex_prefix("0x");
         formatter.options_mut().set_hex_suffix("");
         formatter
@@ -263,41 +295,142 @@ impl Disassembler {
 }
 
 impl Display for Disassembler {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut indent = false;
-        for instruction in &self.instructions.0 {
-            let label = self.labels.get_by_address(instruction.ip() as Address);
-            if let Some(label) = label {
-                writeln!(f, "{label}")?;
-                indent = true;
-            }
-            if indent {
-                write!(f, "    ")?;
-            }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Pick whatever defaults you feel are “normal”.
+        // You can also make these configurable through `Disassembler` fields.
+        let opts = DisassemblerOptions::default();
 
-            if instruction.mnemonic() == Mnemonic::Ret {
-                indent = false;
-            }
+        // Buffer the stream output in-memory…
+        let mut buf = Cursor::new(Vec::<u8>::new());
+        self.disassemble_stream(&mut buf, opts)
+            .map_err(|_| fmt::Error)?;
 
-            // if the instruction is a jump or call, check if it has a label
-            if instruction.is_jmp_short() || instruction.is_call_near() {
-                let address = self
-                    .labels
-                    .get_by_address(instruction.near_branch_target() as Address);
+        // …and then write it into the formatter.
+        // SAFETY: `disassemble_stream` only writes valid UTF-8.
+        let text = String::from_utf8(buf.into_inner()).map_err(|_| fmt::Error)?;
+        f.write_str(&text)
+    }
+}
 
-                if let Some(label) = address {
-                    if instruction.is_jmp_short() {
-                        write!(f, "jmp short {} ; label\n", label.name)?;
-                    } else {
-                        write!(f, "call {} ; function\n", label.name)?;
-                    }
-                } else {
-                    write!(f, "{}\n", instruction)?;
-                }
-            } else {
-                write!(f, "{}\n", instruction)?;
-            }
-        }
-        Ok(())
+#[cfg(test)]
+mod tests {
+    use super::*;
+    // use std::io::Write;            // for Cursor
+    // use std::io::Cursor;
+
+    /// Helper: one tiny DOS‑COM program, starting at 0x100.
+    ///
+    /// Layout (addresses relative to COM load‑address 0x100):
+    ///
+    ///  ┌─────────────┐
+    ///  │100 EB 04    │ jmp  START        (creates label)
+    ///  │102 90 90 90 │ nop padding
+    ///  │106 B4 09    │ START: mov ah, 09 (sets AH=09h)
+    ///  │108 CD 21    │        int 21h    (syscall recognised)
+    ///  │10A C3       │        ret
+    ///  └─────────────┘
+    fn sample_program() -> Vec<u8> {
+        vec![
+            0xEB, 0x04, // jmp short START (→0x106)
+            0x90, 0x90, 0x90, 0x90, // padding NOPs
+            0xB4, 0x09, // mov ah, 09h
+            0xCD, 0x21, // int 21h
+            0xC3, // ret
+        ]
+    }
+
+    fn build_disassembler() -> Disassembler {
+        Disassembler::new(sample_program())
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 1.  InstructionList basics
+    // ──────────────────────────────────────────────────────────────────────────
+    #[test]
+    fn instruction_list_is_empty_on_new() {
+        let list = InstructionList::new();
+        assert!(list.0.is_empty(), "new() should start with an empty vec");
+        assert_eq!(format!("{list}"), "");
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 2.  Register tracking + syscall detection
+    // ──────────────────────────────────────────────────────────────────────────
+    #[test]
+    fn disassembler_tracks_ah_and_syscall() {
+        let d = build_disassembler();
+
+        // AH should contain 0x09 after the MOV
+        assert_eq!(
+            d.register_tracker.get(&Register::AH).copied(),
+            Some(0x09),
+            "AH register must be detected as 0x09"
+        );
+
+        // Exactly one DOS interrupt 21h should be recognised
+        assert_eq!(d.syscall_list.0.len(), 1, "INT 21h syscall not detected");
+        assert_eq!(
+            d.syscall_list.0[0].address, // where the syscall lives
+            0x108,
+            "Syscall address should match INT 21h offset"
+        );
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 3.  Jump / function‑label discovery
+    // ──────────────────────────────────────────────────────────────────────────
+    #[test]
+    fn jump_creates_start_label() {
+        let d = build_disassembler();
+
+        let lbl = d
+            .labels
+            .get_by_address(0x0106)
+            .expect("Label for 0x0106 must exist");
+        assert_eq!(lbl.name, "START_0x0106");
+        assert_eq!(lbl.label_type, LabelType::LABEL);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 4.  Stream formatting – smoke‑test every option
+    // ──────────────────────────────────────────────────────────────────────────
+    #[test]
+    fn disassemble_stream_emits_expected_text() {
+        let d = build_disassembler();
+        let opts = DisassemblerOptions {
+            write_labels: true,
+            write_indent: true,
+            offset_comments: true,
+            syscall_comments: true,
+            write_bytes: true,
+        };
+
+        let mut buf = Vec::<u8>::new();
+        d.disassemble_stream(&mut buf, opts)
+            .expect("stream display should succeed");
+
+        let out = String::from_utf8(buf).expect("output is valid UTF-8");
+
+        // Essential sign‑posts
+        assert!(out.contains("START_0x0106"), "Label should be printed");
+        assert!(
+            out.contains("jmp START_0x0106 ; label"),
+            "Jump should be rewritten to symbolic label"
+        );
+        assert!(
+            out.contains("int 0x21"),
+            "INT 21h should appear in NASM formatter output"
+        );
+        assert!(out.contains("; 0x0100"), "Offset comments must be present");
+        assert!(
+            out.contains("; bytes:"),
+            "Raw-bytes comment should be present"
+        );
+        // There should be *some* syscall comment appended after int 21h
+        assert!(
+            out.lines()
+                .any(|l| l.contains("int 0x21") && l.contains(" ; ")),
+            "INT 21h line should contain a semicolon-separated syscall name/value"
+        );
     }
 }
