@@ -38,6 +38,12 @@ Name: "addtopath"; Description: "Add to &PATH"; GroupDescription: "Environment O
 Filename: "{app}\\{#MyAppExeName}"; Description: "Run {#MyAppName}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+
+function IsActuallyAdmin: Boolean;
+begin
+  Result := (GetShellFolder('commonappdata') <> '');
+end;
+
 function GetInstallDir(Default: String): String;
 var
   IsAdmin: Boolean;
@@ -80,7 +86,4 @@ begin
   end;
 end;
 
-function IsActuallyAdmin: Boolean;
-begin
-  Result := (GetShellFolder('commonappdata') <> '');
-end;
+
