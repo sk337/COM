@@ -39,16 +39,12 @@ Filename: "{app}\\{#MyAppExeName}"; Description: "Run {#MyAppName}"; Flags: nowa
 
 [Code]
 
-function IsActuallyAdmin: Boolean;
-begin
-  Result := (GetShellFolder('commonappdata') <> '');
-end;
 
 function GetInstallDir(Default: String): String;
 var
   IsAdmin: Boolean;
 begin
-  IsAdmin := IsActuallyAdmin;
+  IsAdmin := IsAdminLoggedOn;
   if IsAdmin then
     Result := ExpandConstant('{pf64}\\{#MyAppName}')
   else
@@ -77,7 +73,7 @@ var
 begin
   if CurStep = ssPostInstall then begin
     if WizardIsTaskSelected('addtopath') then begin
-      if IsActuallyAdmin then
+      if IsAdminLoggedOn then
         RootKey := HKEY_LOCAL_MACHINE
       else
         RootKey := HKEY_CURRENT_USER;
