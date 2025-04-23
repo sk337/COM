@@ -36,9 +36,15 @@ RUN apt-get update && \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
-RUN git clone --depth=1 https://github.com/joncampbell123/dosbox-x.git /opt/dosbox-x && \
-	cd /opt/dosbox-x && \
-	./build-debug && \
-	sudo make install
-
-	
+# Build or update DOSBox-X
+RUN if [ -d /opt/dosbox-x ]; then \
+		cd /opt/dosbox-x && \
+		git pull && \
+		./build-debug && \
+		sudo make install; \
+	else \
+		git clone --depth=1 https://github.com/joncampbell123/dosbox-x.git /opt/dosbox-x && \
+		cd /opt/dosbox-x && \
+		./build-debug && \
+		sudo make install; \
+	fi
