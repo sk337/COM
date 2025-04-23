@@ -70,7 +70,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Inno Setup
         run: choco install innosetup -y
 
@@ -122,7 +122,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}
-          path: *.zip
+          path: |
+            *.zip
 
   release:
     needs: [build-linux, build-windows, build-macos]
