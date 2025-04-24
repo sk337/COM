@@ -1,5 +1,7 @@
-use crate::consts::{Address, SIZE};
+use crate::comment::{Comment, CommentList, CommentType};
+use crate::consts::{Address, COM_OFFSET, SIZE};
 use crate::label::{Label, LabelList, LabelType};
+use crate::string::{StringConstant, StringConstantList};
 use crate::syscall::{Syscall, SyscallList, SyscallType};
 use iced_x86::{
     Decoder, DecoderOptions, Encoder, Formatter, Instruction, Mnemonic, NasmFormatter, OpKind,
@@ -35,6 +37,10 @@ impl Display for InstructionList {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 /// A struct for disassembling a binary file
+///
+/// This struct contains a list of labels, instructions, and other relevant data
+/// for disassembling a binary file.
+/// It provides methods for disassembling the binary data and formatting the output.
 pub struct Disassembler {
     /// A list of labels in the disassembled code
     pub labels: LabelList,
@@ -46,6 +52,10 @@ pub struct Disassembler {
     pub syscall_list: SyscallList,
     /// A hashmap to track register values
     pub register_tracker: hash_map::HashMap<Register, u16>,
+    /// a list of comments in the disassembled code
+    pub comment_list: CommentList,
+    /// A list of string constants in the disassembled code
+    pub string_constant_list: StringConstantList,
 }
 
 /// Options for the disassembler
@@ -60,6 +70,8 @@ pub struct DisassemblerOptions {
     pub syscall_comments: bool,
     /// write bytes next to the instruction
     pub write_bytes: bool,
+    /// Whether to write misc comments
+    pub misc_comments: bool,
 }
 
 impl Default for DisassemblerOptions {
@@ -70,6 +82,7 @@ impl Default for DisassemblerOptions {
             offset_comments: false,
             syscall_comments: false,
             write_bytes: false,
+            misc_comments: true,
         }
     }
 }
@@ -100,14 +113,56 @@ impl Disassembler {
             data,
             syscall_list: SyscallList::new(),
             register_tracker: hash_map::HashMap::new(),
+            comment_list: CommentList::new(),
+            string_constant_list: StringConstantList::new(),
         };
         disassembler.disassemble();
         disassembler.search_labels();
+
         disassembler
     }
 
+    fn find_string_constant(&mut self, address: Address) {
+        let index = (address - COM_OFFSET) as usize;
+        let mut out = String::new();
+        for i in index..self.data.len() {
+            if self.data[i] == 0x24 {
+                out.push('$');
+                break;
+            } else if self.data[i] == 0x00 {
+                break;
+            }
+            out.push(self.data[i] as char);
+        }
+
+        if out.len() > 0 {
+            let string_constant = StringConstant {
+                start: address,
+                end: address + out.len() as u16,
+                value: out,
+            };
+            self.string_constant_list.0.push(string_constant);
+        }
+    }
+
+    fn create_syscall_comments(&mut self, syscall: &Syscall) {
+        let s_type = syscall.number;
+        if s_type == SyscallType::DisplayString {
+            if let Some(address) = self.register_tracker.get(&Register::DX).copied() {
+                self.find_string_constant(address);
+                let comment = Comment {
+                    comment_type: CommentType::PRE,
+                    comment_text: "Start of string data".to_string(),
+                    address,
+                };
+                self.comment_list.0.push(comment);
+            }
+        }
+    }
+
     fn disassemble(&mut self) {
-        let mut decoder = Decoder::with_ip(SIZE, &self.data, 0x100, DecoderOptions::NONE);
+        let new_data = self.data.clone();
+        let mut decoder = Decoder::with_ip(SIZE, &new_data, 0x100, DecoderOptions::NONE);
 
         while decoder.can_decode() {
             let instruction = decoder.decode();
@@ -132,17 +187,18 @@ impl Disassembler {
             if instruction.mnemonic() == Mnemonic::Int {
                 if instruction.op0_kind() == OpKind::Immediate8 {
                     if instruction.immediate8() == 0x21 {
-                        let syscalltype = SyscallType::from_u16(
+                        let sys_call_type = SyscallType::from_u16(
                             *self.register_tracker.get(&Register::AH).unwrap_or(&0),
                         );
-                        if syscalltype.is_none() {
+                        if sys_call_type.is_none() {
                             continue;
                         }
-                        let syscalltype = syscalltype.unwrap();
+                        let syscalltype = sys_call_type.unwrap();
                         let syscall = Syscall {
                             number: syscalltype,
                             address: instruction.ip() as Address,
                         };
+                        self.create_syscall_comments(&syscall);
                         self.syscall_list.0.push(syscall);
                     }
                 }
@@ -159,9 +215,17 @@ impl Disassembler {
                     let label = Label {
                         address: instruction.near_branch_target() as Address,
                         label_type: LabelType::LABEL,
-                        name: format!("START_0x{:04x}", instruction.near_branch_target()),
+                        name: format!("_start"),
                     };
                     self.labels.0.push(label);
+
+                    let comment = Comment {
+                        comment_type: CommentType::PRE,
+                        comment_text: "Start of program".to_string(),
+                        address: instruction.near_branch_target() as Address,
+                    };
+
+                    self.comment_list.0.push(comment);
                 } else {
                     let label = Label {
                         address: instruction.near_branch_target() as Address,
@@ -220,7 +284,21 @@ impl Disassembler {
 
         let mut indent = false;
         for instruction in &self.instructions.0 {
+            let string_constant = self
+                .string_constant_list
+                .get_string_constant(instruction.ip() as Address);
+
             let label = self.labels.get_by_address(instruction.ip() as Address);
+            let comments = self.comment_list.get_comments(instruction.ip() as Address);
+            for comment in comments.clone() {
+                if opts.misc_comments && comment.comment_type == CommentType::PRE {
+                    if indent {
+                        write!(f, "    ")?;
+                    }
+                    write!(f, "{}\n", comment)?;
+                }
+            }
+
             if let Some(label) = label {
                 if opts.write_labels {
                     writeln!(f, "{label}")?;
@@ -235,8 +313,12 @@ impl Disassembler {
                 indent = false;
             }
 
-            // println!("{:?}", instruction.mnemonic());
-            // if the instruction is a jump or call, check if it has a label
+            if let Some(string_constant) = string_constant {
+                if instruction.ip() as Address == string_constant.start {
+                    write!(f, "; {}\n", string_constant.as_db_statement())?
+                }
+            }
+
             if instruction.is_jmp_short() || instruction.is_call_near() {
                 let address = self
                     .labels
@@ -288,7 +370,30 @@ impl Disassembler {
                     write!(f, "{:02x}", byte)?;
                 }
             }
+
+            for comment in comments.clone() {
+                if opts.misc_comments && comment.comment_type == CommentType::INLINE {
+                    write!(f, "{}", comment)?;
+                }
+            }
+
             writeln!(f)?;
+
+            let has_post_comments = comments
+                .iter()
+                .any(|comment| comment.comment_type == CommentType::POST);
+            for comment in comments.clone() {
+                if opts.misc_comments && comment.comment_type == CommentType::POST {
+                    if indent {
+                        write!(f, "    ")?;
+                    }
+                    write!(f, "{}", comment)?;
+                }
+            }
+
+            if has_post_comments {
+                writeln!(f)?;
+            }
         }
         Ok(())
     }
@@ -387,7 +492,7 @@ mod tests {
             .labels
             .get_by_address(0x0106)
             .expect("Label for 0x0106 must exist");
-        assert_eq!(lbl.name, "START_0x0106");
+        assert_eq!(lbl.name, "_start");
         assert_eq!(lbl.label_type, LabelType::LABEL);
     }
 
@@ -403,6 +508,7 @@ mod tests {
             offset_comments: true,
             syscall_comments: true,
             write_bytes: true,
+            misc_comments: true,
         };
 
         let mut buf = Vec::<u8>::new();
@@ -412,9 +518,9 @@ mod tests {
         let out = String::from_utf8(buf).expect("output is valid UTF-8");
 
         // Essential sign‑posts
-        assert!(out.contains("START_0x0106"), "Label should be printed");
+        assert!(out.contains("_start"), "Label should be printed");
         assert!(
-            out.contains("jmp START_0x0106 ; label"),
+            out.contains("jmp _start ; label"),
             "Jump should be rewritten to symbolic label"
         );
         assert!(

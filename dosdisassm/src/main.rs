@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::path::PathBuf;
 
+use disassembler::comment::{Comment, CommentType};
 use disassembler::disassemble::{Disassembler, DisassemblerOptions};
 
 /// Simple CLI for disassembling DOS .COM binaries
@@ -36,6 +37,10 @@ struct Args {
     #[arg(long, default_value_t = false)]
     /// Include raw bytes in the output
     bytes: bool,
+
+    #[arg(long, default_value_t = true)]
+    /// Include misc comments in the output
+    comments: bool,
 }
 
 fn main() -> io::Result<()> {
@@ -51,7 +56,13 @@ fn main() -> io::Result<()> {
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;
 
-    let disassembler = Disassembler::new(buffer);
+    let mut disassembler = Disassembler::new(buffer);
+
+    disassembler.comment_list.0.push(Comment::new(
+        CommentType::PRE,
+        "Disassembled by DosDisassm".to_string(),
+        0x100,
+    ));
 
     let opts = DisassemblerOptions {
         write_labels: args.labels,
@@ -59,6 +70,7 @@ fn main() -> io::Result<()> {
         offset_comments: args.offsets,
         syscall_comments: args.syscalls,
         write_bytes: args.bytes,
+        misc_comments: args.comments,
     };
 
     match args.output {

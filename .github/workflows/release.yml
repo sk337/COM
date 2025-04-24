@@ -29,8 +29,52 @@ jobs:
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+  validate-version:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract current tag
+        id: tag
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch all tags
+        run: git fetch --tags
+
+      - name: Get latest previous tag
+        id: latest
+        run: |
+          PREV=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "${{ steps.tag.outputs.tag }}" | head -n1)
+          echo "prev=${PREV#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure new tag is greater than previous tag
+        run: |
+          NEW=${{ steps.tag.outputs.tag }}
+          OLD=${{ steps.latest.outputs.prev }}
+          if [ -n "$OLD" ] && [ "$(printf '%s\n' "$NEW" "$OLD" | sort -V | tail -n1)" != "$NEW" ]; then
+            echo "❌ New version ($NEW) is not greater than previous version ($OLD)"
+            exit 1
+          fi
+
+      - name: Validate Cargo.toml versions match tag
+        run: |
+          EXPECTED="${{ steps.tag.outputs.tag }}"
+          FILES=$(find . -name Cargo.toml)
+          for FILE in $FILES; do
+            VERSION=$(grep '^version *= *"' "$FILE" | head -n1 | sed 's/.*"\(.*\)".*/\1/')
+            if [ "$VERSION" != "$EXPECTED" ]; then
+              echo "❌ Version mismatch in $FILE (found: $VERSION, expected: $EXPECTED)"
+              exit 1
+            else
+              echo "✅ $FILE version matches $EXPECTED"
+            fi
+          done
+
   build-linux:
-    needs: set-version
+    needs: [validate-version, set-version]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,6 +87,39 @@ jobs:
 
       - name: Build
         run: cargo build --release
+      
+      - name: Install AppImage tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2
+          wget -O appimagetool https://github.com/AppImage/AppImageKit/releases/latest/download/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+
+      - name: Prepare AppDir structure
+        run: |
+          mkdir -p AppDir/usr/bin
+          cp target/release/dosdisassm AppDir/usr/bin/
+          cp assets/icon.png AppDir/icon.png
+
+          cat > AppDir/dosdisassm.desktop <<EOF
+          [Desktop Entry]
+          Type=Application
+          Name=DosDisassm
+          Exec=dosdisassm
+          Icon=icon
+          Categories=Utility;
+          EOF
+
+      - name: Build AppImage
+        run: |
+          ./appimagetool AppDir
+          mv DosDisassm*.AppImage dosdisassm-${{ needs.set-version.outputs.version }}-linux-x86_64.AppImage
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: dosdisassm-${{ needs.set-version.outputs.version }}-linux-x86_64.AppImage
 
       - name: Package files
         run: |
@@ -69,7 +146,7 @@ jobs:
             *.rpm
 
   build-windows:
-    needs: set-version
+    needs: [validate-version, set-version]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -101,7 +178,7 @@ jobs:
             *.exe
 
   build-macos:
-    needs: set-version
+    needs: [validate-version, set-version]
     strategy:
       matrix:
         arch: [x86_64-apple-darwin, aarch64-apple-darwin]

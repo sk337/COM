@@ -2,8 +2,22 @@
 name = "dosdisassm"
 version = "0.1.0"
 edition = "2024"
+build = "build.rs"
 authors = ["sk337 <me@pk3.zip>"]
+description = "A DOS disassembler for 16-bit x86 code"
+
+[package.metadata.winres]
+    icon = "icon.ico"
+    language = "English (United States)"
+    file_version = "0.1.0"
+    product_version = "0.1.0"
+    file_description = "DOS Disassembler"
+    product_name = "DOS Disassembler"
+    company_name = "sk337"
 
 [dependencies]
 clap = { version = "4.5.37", features = ["derive"] }
 disassembler = { version = "0.1.0", path = "../disassembler" }
+
+[build-dependencies]
+winres = "0.1.12"

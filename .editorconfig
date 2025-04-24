@@ -10,10 +10,7 @@ end_of_line = lf
 indent_size = 2
 indent_style = space
 
-[*.{s,asm,as}]
-indent_size = 4
-
-[*.{toml,rs}]
+[*.{s,asm,as,toml,rs,json}]
 indent_size = 4
 
 [{Dockerfile,Makefile}]

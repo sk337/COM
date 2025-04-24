@@ -1,3 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["disassembler", "dosdisassm"]
+members = ["disassembler", "dosdisassm", "updater"]
+
+[profile.release]
+strip = true

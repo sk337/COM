@@ -9,3 +9,7 @@ pub mod disassemble;
 pub mod label;
 /// a Module that contains int 21h syscalls
 pub mod syscall;
+/// a Module for managing comments in the disassembly
+pub mod comment;
+/// a Module for defining string constants
+pub mod string;

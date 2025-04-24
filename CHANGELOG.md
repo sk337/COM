@@ -1,5 +1,13 @@
 # Change Log
 
+## v0.1.1
+
+- Add misc comments to program
+- change name of detected start address from `START_0x{offset}` to `_start` and update corresponding tests
+- add an automatic updater
+- move watermark comment to CLI instead of library
+
+
 ## v0.1.0
 - Initial release of the `dosdisassm` project.
 - Added a CLI tool for disassembling DOS `.COM` binaries.

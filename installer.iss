@@ -1,5 +1,6 @@
 #define MyAppName "DosDisassm"
 #define MyAppExeName "dosdisassm.exe"
+#define MyAppUpdater "updater.exe"
 #define MyAppVersion "0.1.0"
 #define MyAppPublisher "sk337"
 #define MyLicenseFile "LICENSE"
@@ -25,6 +26,12 @@ LicenseFile={#MyLicenseFile}
 
 [Files]
 Source: "target\\release\\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "target\\release\\{#MyAppExeName}.pdb"; DestDir: "{app}"; Flags: ignoreversion
+; Source: "target\\release\\{#MyAppUpdater}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "PLANNED.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\\{#MyAppName}"; Filename: "{app}\\{#MyAppExeName}"; IconFilename: "{app}\\{#MyAppExeName}"

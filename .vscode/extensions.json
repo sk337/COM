@@ -6,6 +6,8 @@
         "maziac.asm-code-lens",
         "github.vscode-github-actions",
         "chouzz.vscode-innosetup",
-        "alefragnani.pascal"
+        "alefragnani.pascal",
+        "streetsidesoftware.code-spell-checker",
+        "dustypomerleau.rust-syntax"
     ]
 }
