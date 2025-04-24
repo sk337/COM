@@ -79,6 +79,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
       - name: Install tools
         run: |
           sudo apt-get update
@@ -87,7 +93,7 @@ jobs:
 
       - name: Build
         run: cargo build --release
-      
+
       - name: Install AppImage tooling
         run: |
           sudo apt-get update
@@ -151,6 +157,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
       - name: Install Inno Setup
         run: choco install innosetup -y
 
@@ -185,6 +197,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
 
       - name: Install target
         run: rustup target add ${{ matrix.arch }}

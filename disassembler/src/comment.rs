@@ -118,8 +118,8 @@ mod tests {
     // ──────────────────────────────────────────────────────────────────────────
     #[test]
     fn new_comment_has_expected_fields() {
-        let c = cmt(0x1000, CommentType::PRE, "Hello");
-        assert_eq!(c.address, 0x1000);
+        let c = cmt(0x1000.into(), CommentType::PRE, "Hello");
+        assert_eq!(c.address, 0x1000.into());
         assert_eq!(c.comment_type, CommentType::PRE);
         assert_eq!(c.comment_text, "Hello");
     }
@@ -129,7 +129,7 @@ mod tests {
     // ──────────────────────────────────────────────────────────────────────────
     #[test]
     fn comment_display_prefixes_semicolon() {
-        let shown = format!("{}", cmt(0, CommentType::INLINE, "Hi there"));
+        let shown = format!("{}", cmt(0.into(), CommentType::INLINE, "Hi there"));
         assert_eq!(shown, "; Hi there");
     }
 
@@ -150,19 +150,19 @@ mod tests {
         let mut list = CommentList::new();
 
         // Two comments at 0x1234, one elsewhere
-        let a = cmt(0x1234, CommentType::PRE, "First");
-        let b = cmt(0x1234, CommentType::POST, "Second");
-        let c = cmt(0x9999, CommentType::INLINE, "Other");
+        let a = cmt(0x1234.into(), CommentType::PRE, "First");
+        let b = cmt(0x1234.into(), CommentType::POST, "Second");
+        let c = cmt(0x9999.into(), CommentType::INLINE, "Other");
 
         list.0.extend([a.clone(), b.clone(), c]);
 
-        let hits = list.get_comments(0x1234);
+        let hits = list.get_comments(0x1234.into());
         assert_eq!(hits.len(), 2);
         assert!(hits.contains(&&a));
         assert!(hits.contains(&&b));
 
         // Unknown address ⇒ empty vec
-        assert!(list.get_comments(0xDEAD).is_empty());
+        assert!(list.get_comments(0xDEAD.into()).is_empty());
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -170,9 +170,9 @@ mod tests {
     // ──────────────────────────────────────────────────────────────────────────
     #[test]
     fn comment_equality_is_fieldwise() {
-        let x = cmt(0x1111, CommentType::INLINE, "Same");
-        let y = cmt(0x1111, CommentType::INLINE, "Same");
-        let z = cmt(0x1111, CommentType::PRE, "Same but different type");
+        let x = cmt(0x1111.into(), CommentType::INLINE, "Same");
+        let y = cmt(0x1111.into(), CommentType::INLINE, "Same");
+        let z = cmt(0x1111.into(), CommentType::PRE, "Same but different type");
 
         assert_eq!(x, y);
         assert_ne!(x, z);

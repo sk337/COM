@@ -38,7 +38,7 @@ impl StringConstant {
     pub fn new(value: &str, start: Address, end: Address) -> Self {
         assert_eq!(
             end - start,
-            value.bytes().len() as Address,
+            value.bytes().len().into(),
             "The length of the string does not match the length of the address range"
         );
 
@@ -276,6 +276,7 @@ mod tests {
     fn get_string_constant_returns_none_if_not_found() {
         let mut list = StringConstantList::new();
         list.0.push(str_const("hi", 0x2000));
+        println!("{:?}", list);
         assert!(list.get_string_constant(0x1FFF).is_none());
         assert!(list.get_string_constant(0x2002).is_none()); // just past end
     }

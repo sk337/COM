@@ -123,7 +123,7 @@ impl Disassembler {
     }
 
     fn find_string_constant(&mut self, address: Address) {
-        let index = (address - COM_OFFSET) as usize;
+        let index = (address - Address(0x100));
         let mut out = String::new();
         for i in index..self.data.len() {
             if self.data[i] == 0x24 {

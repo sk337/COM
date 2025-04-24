@@ -21,7 +21,7 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           override: true
 
       - name: Install Tarpaulin
@@ -51,7 +51,8 @@ jobs:
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
+          override: true
 
       - name: build
         run: cargo build --all --verbose
