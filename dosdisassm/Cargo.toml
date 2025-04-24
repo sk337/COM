@@ -1,6 +1,6 @@
 [package]
 name = "dosdisassm"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 build = "build.rs"
 authors = ["sk337 <me@pk3.zip>"]
@@ -17,7 +17,7 @@ description = "A DOS disassembler for 16-bit x86 code"
 
 [dependencies]
 clap = { version = "4.5.37", features = ["derive"] }
-disassembler = { version = "0.1.0", path = "../disassembler" }
+disassembler = { version = "0.1.1", path = "../disassembler" }
 
 [build-dependencies]
 winres = "0.1.12"
