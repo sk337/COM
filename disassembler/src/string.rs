@@ -180,3 +180,118 @@ impl StringConstantList {
             .find(|s| s.start <= address && s.end >= address)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn addr(n: u16) -> Address {
+        n
+    }
+
+    fn str_const(s: &str, start: u16) -> StringConstant {
+        StringConstant::new(s, addr(start), addr(start + s.len() as u16))
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 1. StringConstant::new
+    // ─────────────────────────────────────────────────────────────────────────────
+    #[test]
+    fn new_string_constant_sets_all_fields() {
+        let sc = str_const("abc", 0x2000);
+        assert_eq!(sc.value, "abc");
+        assert_eq!(sc.start, 0x2000);
+        assert_eq!(sc.end, 0x2003);
+    }
+
+    #[test]
+    #[should_panic(expected = "The length of the string does not match")]
+    fn new_panics_if_range_and_length_mismatch() {
+        let _ = StringConstant::new("abc", 0x1000, 0x1004); // len = 3 but range = 4
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 2. StringConstant::len
+    // ─────────────────────────────────────────────────────────────────────────────
+    #[test]
+    fn len_returns_correct_length() {
+        assert_eq!(str_const("Hello!", 0x0000).len(), 6);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 3. StringConstant::as_db_statement
+    // ─────────────────────────────────────────────────────────────────────────────
+    #[test]
+    fn db_statement_printable_only() {
+        let s = str_const("abc", 0x0000);
+        assert_eq!(s.as_db_statement(), r#"db "abc""#);
+    }
+
+    #[test]
+    fn db_statement_nonprintables() {
+        let s = str_const("\x01\x02\x03", 0x0000);
+        assert_eq!(s.as_db_statement(), "db 0x01, 0x02, 0x03");
+    }
+
+    #[test]
+    fn db_statement_mixed_content() {
+        let s = str_const("hi\x0D\x0A$", 0x0000);
+        assert_eq!(s.as_db_statement(), r#"db "hi", 0x0D, 0x0A, "$""#);
+    }
+
+    #[test]
+    fn db_statement_with_space_and_quotes() {
+        let s = str_const(r#"A "quote""#, 0x0000);
+        assert_eq!(s.as_db_statement(), r#"db "A \"quote\"""#);
+    }
+
+    #[test]
+    fn db_statement_empty_string() {
+        let s = str_const("", 0x0000);
+        assert_eq!(s.as_db_statement(), "db ");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 4. StringConstantList
+    // ─────────────────────────────────────────────────────────────────────────────
+    #[test]
+    fn new_string_constant_list_is_empty() {
+        let list = StringConstantList::new();
+        assert!(list.0.is_empty());
+    }
+
+    #[test]
+    fn get_string_constant_returns_containing_string() {
+        let mut list = StringConstantList::new();
+        list.0.push(str_const("hello", 0x1000)); // 0x1000–0x1005
+        list.0.push(str_const("goodbye", 0x1006)); // 0x1006–0x100D
+
+        assert_eq!(list.get_string_constant(0x1000).unwrap().value, "hello");
+        assert_eq!(list.get_string_constant(0x1004).unwrap().value, "hello");
+        assert_eq!(list.get_string_constant(0x1006).unwrap().value, "goodbye");
+        assert_eq!(list.get_string_constant(0x100C).unwrap().value, "goodbye");
+    }
+
+    #[test]
+    fn get_string_constant_returns_none_if_not_found() {
+        let mut list = StringConstantList::new();
+        list.0.push(str_const("hi", 0x2000));
+        assert!(list.get_string_constant(0x1FFF).is_none());
+        assert!(list.get_string_constant(0x2002).is_none()); // just past end
+    }
+
+    #[test]
+    fn equality_works_for_string_constants_and_lists() {
+        let a = str_const("abc", 0x1000);
+        let b = str_const("abc", 0x1000);
+        let c = str_const("xyz", 0x2000);
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+
+        let list1 = StringConstantList(vec![a.clone()]);
+        let list2 = StringConstantList(vec![b]);
+        let list3 = StringConstantList(vec![c]);
+        assert_eq!(list1, list2);
+        assert_ne!(list1, list3);
+    }
+}
