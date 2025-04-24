@@ -30,10 +30,10 @@ impl StringConstant {
     /// use disassembler::string::StringConstant;
     /// use disassembler::consts::Address;
     ///
-    /// let string_constant = StringConstant::new("Hello, World!", 0x1000, 0x100C);
+    /// let string_constant = StringConstant::new("Hello, World!", 0x1000, 0x100D);
     /// assert_eq!(string_constant.value, "Hello, World!");
     /// assert_eq!(string_constant.start, 0x1000);
-    /// assert_eq!(string_constant.end, 0x100C);
+    /// assert_eq!(string_constant.end, 0x100D);
     /// ```
     pub fn new(value: &str, start: Address, end: Address) -> Self {
         assert_eq!(
@@ -60,7 +60,7 @@ impl StringConstant {
     /// use disassembler::string::StringConstant;
     /// use disassembler::consts::Address;
     ///
-    /// let string_constant = StringConstant::new("Hello, World!", 0x1000, 0x100C);
+    /// let string_constant = StringConstant::new("Hello, World!", 0x1000, 0x100D);
     /// assert_eq!(string_constant.len(), 13);
     /// ```
     pub fn len(&self) -> usize {
@@ -79,7 +79,7 @@ impl StringConstant {
     /// use disassembler::string::StringConstant;
     /// use disassembler::consts::Address;
     ///
-    /// let string_constant = StringConstant::new(b"Hello, World!\r\n$", 0x1000, 0x1010);
+    /// let string_constant = StringConstant::new("Hello, World!\r\n$", 0x1000, 0x1010);
     ///
     /// assert_eq!(string_constant.as_db_statement(), "db \"Hello, World!\", 0x0D, 0x0A, \"$\"");
     /// ```
@@ -163,15 +163,15 @@ impl StringConstantList {
     /// use disassembler::consts::Address;
     ///
     /// let mut string_constant_list = StringConstantList::new();
-    /// string_constant_list.0.push(StringConstant::new("Hello, World!", 0x1000, 0x100C));
-    /// string_constant_list.0.push(StringConstant::new("Goodbye, World!", 0x100D, 0x1019));
-    /// 
+    /// string_constant_list.0.push(StringConstant::new("Hello, World!", 0x1000, 0x100D));
+    /// string_constant_list.0.push(StringConstant::new("Goodbye, World!", 0x100E, 0x101D));
+    ///
     /// assert_eq!(string_constant_list.get_string_constant(0x1000).unwrap().value, "Hello, World!");
     /// assert_eq!(string_constant_list.get_string_constant(0x1009).unwrap().value, "Hello, World!");
-    /// 
-    /// assert_eq!(string_constant_list.get_string_constant(0x100D).unwrap().value, "Goodbye, World!");
+    ///
+    /// assert_eq!(string_constant_list.get_string_constant(0x100E).unwrap().value, "Goodbye, World!");
     /// assert_eq!(string_constant_list.get_string_constant(0x1013).unwrap().value, "Goodbye, World!");
-    /// 
+    ///
     /// assert!(string_constant_list.get_string_constant(0x1020).is_none());
     /// ```
     pub fn get_string_constant(&self, address: Address) -> Option<&StringConstant> {
