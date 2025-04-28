@@ -101,7 +101,7 @@ jobs:
 
       - name: Install AppImage tooling
         run: |
-          wget -O appimagetool https://github.com/AppImage/AppImageKit/releases/cb0115379a3c03ea9ec13cebf8afc4f27eb1cf6b/download/appimagetool-x86_64.AppImage
+          wget -O appimagetool https://github.com/AppImage/AppImageKit/releases/latest/download/appimagetool-x86_64.AppImage
           chmod +x appimagetool
 
       - name: Prepare AppDir structure
