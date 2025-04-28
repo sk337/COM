@@ -48,6 +48,44 @@ impl StringConstant {
             end,
         }
     }
+
+    /// Creates a new StringConstant
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - The value of the string
+    /// * `start` - The address of the start of the string
+    /// * `end` - The address of the end of the string
+    ///
+    /// # Returns
+    ///
+    /// A new instance of `StringConstant`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use disassembler::string::StringConstant;
+    /// use disassembler::consts::Address;
+    ///
+    /// let string_constant = StringConstant::new("Hello, World!", 0x1000, 0x100D);
+    /// assert_eq!(string_constant.value, "Hello, World!");
+    /// assert_eq!(string_constant.start, 0x1000);
+    /// assert_eq!(string_constant.end, 0x100D);
+    /// ```
+    pub fn new(value: &str, start: u16, end: u16) -> Self {
+        assert_eq!(
+            end - start,
+            value.bytes().len().into(),
+            "The length of the string does not match the length of the address range"
+        );
+
+        StringConstant {
+            value: value.to_string(),
+            start: start.into(),
+            end: end.into(),
+        }
+    }
+
     /// Returns the length of the string
     ///
     /// # Returns

@@ -340,7 +340,7 @@ impl Disassembler {
                         formatter.format(&instruction, &mut temp);
                         if opts.syscall_comments {
                             self.syscall_list
-                                .get_by_address(instruction.ip() as Address)
+                                .get_by_address(instruction.ip().into())
                                 .map(|syscall| write!(f, "{} ; {}", temp, syscall.number))
                                 .unwrap_or_else(|| write!(f, "{}", temp))?;
                         } else {

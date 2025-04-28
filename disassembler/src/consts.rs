@@ -1,5 +1,8 @@
+#![feature(step_trait)]
+
 use std::fmt;
 use std::ops::*;
+use std::range::Step;
 
 /// address size in bits
 pub const SIZE: u32 = 16;
@@ -149,5 +152,19 @@ impl BitXor for Address {
     type Output = Address;
     fn bitxor(self, rhs: Address) -> Self::Output {
         Address(self.0 ^ rhs.0)
+    }
+}
+
+impl Step for Address {
+    fn steps_between(start: &Self, end: &Self) -> Option<usize> {
+        Some(end.0.wrapping_sub(start.0) as usize)
+    }
+
+    fn forward_checked(start: Self, count: usize) -> Option<Self> {
+        Some(Address(start.0.checked_add(count as u16)?))
+    }
+
+    fn backward_checked(start: Self, count: usize) -> Option<Self> {
+        Some(Address(start.0.checked_sub(count as u16)?))
     }
 }

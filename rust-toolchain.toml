@@ -1,0 +1,2 @@
+[toolchain]
+channel = "nightly" # or "nightly" or a specific version like "1.77.0"
