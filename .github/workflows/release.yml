@@ -82,7 +82,7 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm ruby ruby-dev build-essential
+          sudo apt-get install -y rpm ruby ruby-dev build-essential libfuse2
           sudo gem install --no-document fpm
 
       - name: Cache cargo registry and build
@@ -101,9 +101,7 @@ jobs:
 
       - name: Install AppImage tooling
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libfuse2
-          wget -O appimagetool https://github.com/AppImage/AppImageKit/releases/latest/download/appimagetool-x86_64.AppImage
+          wget -O appimagetool https://github.com/AppImage/AppImageKit/releases/cb0115379a3c03ea9ec13cebf8afc4f27eb1cf6b/download/appimagetool-x86_64.AppImage
           chmod +x appimagetool
 
       - name: Prepare AppDir structure
@@ -209,6 +207,14 @@ jobs:
       - name: Install target
         run: rustup target add ${{ matrix.arch }}
 
+      - name: Install Xcode Command Line Tools
+        run: |
+          if ! command -v SetFile >/dev/null; then
+            echo "Installing Xcode Command Line Tools..."
+            xcode-select --install || true
+            sleep 30
+          fi
+
       - name: Cache cargo registry and build
         uses: actions/cache@v4
         with:
@@ -223,6 +229,15 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.arch }}
 
+      - name: Create DMG
+        run: |
+          mkdir -p dmg-root
+          cp target/${{ matrix.arch }}/release/${{ env.PROJECT_NAME }} dmg-root/
+          ln -s /Applications dmg-root/Applications
+          cp assets/icon.icns dmg-root/.VolumeIcon.icns
+          SetFile -a C dmg-root
+          hdiutil create ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-macos-${{ matrix.arch == 'x86_64-apple-darwin' && 'x86_64' || 'aarch64' }}.dmg -volname "${{ env.PROJECT_NAME }}" -srcfolder dmg-root -ov -format UDZO
+
       - name: Package
         run: |
           mkdir -p dist
@@ -235,6 +250,7 @@ jobs:
           name: macos-${{ matrix.arch }}
           path: |
             *.zip
+            *.dmg
 
   release:
     needs: [build-linux, build-windows, build-macos]
@@ -248,6 +264,44 @@ jobs:
       - name: Flatten artifacts
         run: find artifacts -type f -exec mv {} . \;
 
+      - name: Import GPG key
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          echo "$GPG_PRIVATE_KEY_PASSWORD" | gpg --batch --yes --passphrase-fd 0 --edit-key "$GPG_KEY_ID" trust quit
+
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PRIVATE_KEY_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+
+      - name: Create checksums and manifest
+        run: |
+          mkdir -p signatures
+          {
+            echo "Release: ${{ github.ref }}"
+            echo ""
+            echo "Files:"
+            echo ""
+            for FILE in *.zip *.tar.gz *.deb *.rpm *.exe *.AppImage *.dmg; do
+              [ -f "$FILE" ] || continue
+              SHA256=$(sha256sum "$FILE" | cut -d' ' -f1)
+              SIZE=$(stat -c%s "$FILE")
+              echo "$FILE ($SIZE bytes):"
+              echo "  SHA256: $SHA256"
+              echo ""
+            done
+          } > signatures/RELEASE-MANIFEST.txt
+
+      - name: Sign the manifest
+        run: |
+          gpg --batch --yes --armor --output signatures/RELEASE-MANIFEST.txt.asc --detach-sign signatures/RELEASE-MANIFEST.txt
+
+      - name: Upload signed manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-signatures
+          path: signatures/*
+
       - name: Upload release
         uses: softprops/action-gh-release@v1
         with:
@@ -258,3 +312,5 @@ jobs:
             *.rpm
             *.exe
             *.AppImage
+            *.dmg
+            signatures/*
