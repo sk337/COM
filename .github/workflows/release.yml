@@ -87,7 +87,7 @@ jobs:
 
       - name: Build
         run: cargo build --release
-      
+
       - name: Install AppImage tooling
         run: |
           sudo apt-get update
@@ -226,3 +226,4 @@ jobs:
             *.deb
             *.rpm
             *.exe
+            *.AppImage

@@ -20,7 +20,7 @@ OutputBaseFilename=dosdisassm-setup
 SetupIconFile={#MyIconFile}
 Compression=lzma
 SolidCompression=yes
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequiredOverridesAllowed=dialog
 
 LicenseFile={#MyLicenseFile}
@@ -52,7 +52,7 @@ function GetInstallDir(Default: String): String;
 var
   IsAdmin: Boolean;
 begin
-  IsAdmin := IsAdminLoggedOn;
+  IsAdmin := IsAdminInstallMode;
   if IsAdmin then
     Result := ExpandConstant('{pf64}\\{#MyAppName}')
   else
