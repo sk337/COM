@@ -2,7 +2,7 @@
 resolver = "2"
 members = ["disassembler", "dosdisassm", "updater"]
 
-version = "0.1.1"
+version = "0.1.2"
 
 [profile.release]
 debug = true
