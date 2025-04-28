@@ -264,44 +264,44 @@ jobs:
       - name: Flatten artifacts
         run: find artifacts -type f -exec mv {} . \;
 
-      - name: Import GPG key
-        run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          echo "$GPG_KEY_ID:6:" | gpg --import-ownertrust
-          echo "$GPG_PRIVATE_KEY_PASSWORD" | gpg --batch --yes --passphrase-fd 0 --edit-key "$GPG_KEY_ID" trust quit
+      # - name: Import GPG key
+      #   run: |
+      #     echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+      #     echo "$GPG_KEY_ID:6:" | gpg --import-ownertrust
+      #     echo "$GPG_PRIVATE_KEY_PASSWORD" | gpg --batch --yes --passphrase-fd 0 --edit-key "$GPG_KEY_ID" trust quit
 
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PRIVATE_KEY_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
-          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+      #   env:
+      #     GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      #     GPG_PRIVATE_KEY_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
+      #     GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
 
-      - name: Create checksums and manifest
-        run: |
-          mkdir -p signatures
-          {
-            echo "Release: ${{ github.ref }}"
-            echo ""
-            echo "Files:"
-            echo ""
-            for FILE in *.zip *.tar.gz *.deb *.rpm *.exe *.AppImage *.dmg; do
-              [ -f "$FILE" ] || continue
-              SHA256=$(sha256sum "$FILE" | cut -d' ' -f1)
-              SIZE=$(stat -c%s "$FILE")
-              echo "$FILE ($SIZE bytes):"
-              echo "  SHA256: $SHA256"
-              echo ""
-            done
-          } > signatures/RELEASE-MANIFEST.txt
+      # - name: Create checksums and manifest
+      #   run: |
+      #     mkdir -p signatures
+      #     {
+      #       echo "Release: ${{ github.ref }}"
+      #       echo ""
+      #       echo "Files:"
+      #       echo ""
+      #       for FILE in *.zip *.tar.gz *.deb *.rpm *.exe *.AppImage *.dmg; do
+      #         [ -f "$FILE" ] || continue
+      #         SHA256=$(sha256sum "$FILE" | cut -d' ' -f1)
+      #         SIZE=$(stat -c%s "$FILE")
+      #         echo "$FILE ($SIZE bytes):"
+      #         echo "  SHA256: $SHA256"
+      #         echo ""
+      #       done
+      #     } > signatures/RELEASE-MANIFEST.txt
 
-      - name: Sign the manifest
-        run: |
-          gpg --batch --yes --armor --output signatures/RELEASE-MANIFEST.txt.asc --detach-sign signatures/RELEASE-MANIFEST.txt
+      # - name: Sign the manifest
+      #   run: |
+      #     gpg --batch --yes --armor --output signatures/RELEASE-MANIFEST.txt.asc --detach-sign signatures/RELEASE-MANIFEST.txt
 
-      - name: Upload signed manifest
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-signatures
-          path: signatures/*
+      # - name: Upload signed manifest
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: release-signatures
+      #     path: signatures/*
 
       - name: Upload release
         uses: softprops/action-gh-release@v1
