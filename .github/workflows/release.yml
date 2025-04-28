@@ -85,6 +85,17 @@ jobs:
           sudo apt-get install -y rpm ruby ruby-dev build-essential
           sudo gem install --no-document fpm
 
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
       - name: Build
         run: cargo build --release
 
@@ -129,11 +140,11 @@ jobs:
           zip -j ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64-portable.zip dist/*
           tar czvf ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64-portable.tar.gz -C dist .
 
-          fpm -s dir -t deb -n ${{ env.PROJECT_NAME }} -v 1.0.0 --architecture amd64 --prefix /usr/local/bin dist/${{ env.PROJECT_NAME }}
-          mv ${{ env.PROJECT_NAME }}_1.0.0_amd64.deb ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64.deb
+          fpm -s dir -t deb -n ${{ env.PROJECT_NAME }} -v ${{ needs.set-version.outputs.version }} --architecture amd64 --prefix /usr/local/bin dist/${{ env.PROJECT_NAME }}
+          mv ${{ env.PROJECT_NAME }}_${{ needs.set-version.outputs.version }}_amd64.deb ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64.deb
 
-          fpm -s dir -t rpm -n ${{ env.PROJECT_NAME }} -v 1.0.0 --architecture amd64 --prefix /usr/local/bin dist/${{ env.PROJECT_NAME }}
-          mv ${{ env.PROJECT_NAME }}-1.0.0-1.x86_64.rpm ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64.rpm
+          fpm -s dir -t rpm -n ${{ env.PROJECT_NAME }} -v ${{ needs.set-version.outputs.version }} --architecture amd64 --prefix /usr/local/bin dist/${{ env.PROJECT_NAME }}
+          mv ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-1.x86_64.rpm ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64.rpm
 
       - name: Upload
         uses: actions/upload-artifact@v4
@@ -153,6 +164,17 @@ jobs:
 
       - name: Install Inno Setup
         run: choco install innosetup -y
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Build
         run: cargo build --release
@@ -188,6 +210,17 @@ jobs:
 
       - name: Install target
         run: rustup target add ${{ matrix.arch }}
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Build
         run: cargo build --release --target ${{ matrix.arch }}
