@@ -141,10 +141,8 @@ jobs:
           tar czvf ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64-portable.tar.gz -C dist .
 
           fpm -s dir -t deb -n ${{ env.PROJECT_NAME }} -v ${{ needs.set-version.outputs.version }} --architecture amd64 --prefix /usr/local/bin dist/${{ env.PROJECT_NAME }}
-          mv ${{ env.PROJECT_NAME }}_${{ needs.set-version.outputs.version }}_amd64.deb ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64.deb
 
           fpm -s dir -t rpm -n ${{ env.PROJECT_NAME }} -v ${{ needs.set-version.outputs.version }} --architecture amd64 --prefix /usr/local/bin dist/${{ env.PROJECT_NAME }}
-          mv ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-1.x86_64.rpm ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64.rpm
 
       - name: Upload
         uses: actions/upload-artifact@v4
