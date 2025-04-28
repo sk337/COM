@@ -1,6 +1,6 @@
 org 0x100
 jmp start
-msg db "Hello, World", 0x0D, 0x0A, "$"t
+msg db "Hello, World", 0x0D, 0x0A, "$"
 
 start:
     mov ah, 09h
