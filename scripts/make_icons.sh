@@ -38,3 +38,8 @@ png2icns "$OUTPUT_DIR/${BASENAME}.icns" "$ICONSET_DIR"/icon_*.png
 cp "$ICONSET_DIR/icon_1024x1024.png" "$OUTPUT_DIR/${BASENAME}.png"
 
 echo "✅ Done: ${OUTPUT_DIR}/${BASENAME}.{ico,icns,png}"
+
+# Clean up
+
+rm -rf "$TMP_DIR"
+echo "🧹 Cleaned up temporary files."
