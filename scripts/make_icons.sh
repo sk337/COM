@@ -34,4 +34,7 @@ convert \
 # Create .icns (macOS icons)
 png2icns "$OUTPUT_DIR/${BASENAME}.icns" "$ICONSET_DIR"/icon_*.png
 
-echo "✅ Done: ${OUTPUT_DIR}/${BASENAME}.{ico,icns}"
+# Create standalone 1024x1024 PNG
+cp "$ICONSET_DIR/icon_1024x1024.png" "$OUTPUT_DIR/${BASENAME}.png"
+
+echo "✅ Done: ${OUTPUT_DIR}/${BASENAME}.{ico,icns,png}"
