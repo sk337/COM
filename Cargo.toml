@@ -5,4 +5,4 @@ members = ["disassembler", "dosdisassm", "updater"]
 version = "0.1.1"
 
 [profile.release]
-strip = true
+debug = true
