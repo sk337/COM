@@ -6,9 +6,13 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4.5.37", features = ["derive"] }
+libc = "0.2.172"
 octocrab = "0.44.0"
 rand = "0.9.1"
+semver = "1.0.26"
 tokio = { version = "1.44.2", features = ["full"] }
+
+[target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = [
     "winnt",
     "processthreadsapi",
