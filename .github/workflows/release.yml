@@ -111,6 +111,9 @@ jobs:
           mkdir -p AppDir/usr/bin
           cp target/release/dosdisassm AppDir/usr/bin/
           cp assets/icon.png AppDir/icon.png
+          cp README.md AppDir/
+          cp LICENSE AppDir/
+          cp BACKERS.md AppDir/
 
           cat > AppDir/dosdisassm.desktop <<EOF
           [Desktop Entry]
@@ -140,6 +143,7 @@ jobs:
           cp assets/icon.ico dist/
           cp LICENSE dist/
           cp README.md dist/
+          cp BACKERS.md dist/
 
           zip -j ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64-portable.zip dist/*
           tar czvf ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64-portable.tar.gz -C dist .
@@ -197,6 +201,7 @@ jobs:
           copy assets\icon.ico dist\
           copy LICENSE dist\
           copy README.md dist\
+          copy BACKERS.md dist\
           powershell Compress-Archive -Path dist\* -DestinationPath $env:PROJECT_NAME-${{ needs.set-version.outputs.version }}-windows-x64-portable.zip
 
       - name: Create installer with Inno Setup
@@ -258,6 +263,9 @@ jobs:
           cp target/${{ matrix.arch }}/release/${{ env.PROJECT_NAME }} dmg-root/
           ln -s /Applications dmg-root/Applications
           cp assets/icon.icns dmg-root/.VolumeIcon.icns
+          cp README.md dmg-root/
+          cp LICENSE dmg-root/
+          cp BACKERS.md dmg-root/
           SetFile -a C dmg-root
           hdiutil create ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-macos-${{ matrix.arch == 'x86_64-apple-darwin' && 'x86_64' || 'aarch64' }}.dmg -volname "${{ env.PROJECT_NAME }}" -srcfolder dmg-root -ov -format UDZO
 
@@ -265,6 +273,11 @@ jobs:
         run: |
           mkdir -p dist
           cp target/${{ matrix.arch }}/release/${{ env.PROJECT_NAME }} dist/
+          cp assets/icon.png dist/
+          cp assets/icon.icns dist/
+          cp LICENSE dist/
+          cp README.md dist/
+          cp BACKERS.md dist/
           zip -j ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-macos-${{ matrix.arch == 'x86_64-apple-darwin' && 'x86_64' || 'aarch64' }}.zip dist/*
 
       - name: Upload
