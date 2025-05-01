@@ -1,12 +1,7 @@
 {
-  "workbench.colorTheme": "Catppuccin Frappé",
-  "workbench.iconTheme": "catppuccin-frappe",
-  "editor.formatOnPaste": true,
-  "editor.formatOnSave": true,
-  "cSpell.words": [
-    "obfstr",
-    "Octocrab",
-    "syscall",
-    "syscalls"
-  ]
+    "workbench.colorTheme": "Catppuccin Frappé",
+    "workbench.iconTheme": "catppuccin-frappe",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "cSpell.words": ["Disassm", "obfstr", "Octocrab", "syscall", "syscalls"]
 }

@@ -1,0 +1,21 @@
+[package]
+name = "installer"
+version = "0.1.2"
+authors = ["sk337 <me@pk3.zip>"]
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.37", features = ["derive"] }
+octocrab = "0.44.0"
+rand = "0.9.1"
+tokio = { version = "1.44.2", features = ["full"] }
+winapi = { version = "0.3.9", features = [
+    "winnt",
+    "processthreadsapi",
+    "securitybaseapi",
+    "errhandlingapi",
+] }
+winreg = "0.55.0"
+
+[build-dependencies]
+winres = "0.1.12"
