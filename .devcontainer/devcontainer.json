@@ -2,7 +2,6 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/rust
 {
 	"name": "Rust",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"build": {
     "dockerfile": "Dockerfile"
   },
@@ -22,11 +21,6 @@
 			]
 		}
 	},
-	"features": {
-		"ghcr.io/devcontainers-extra/features/cmake:1": {
-			"version": "3.31.4"
-		}
-	},
 
 	// Use 'mounts' to make the cargo cache persistent in a Docker Volume.
 	"mounts": [
@@ -35,11 +29,11 @@
 			"target": "/usr/local/cargo",
 			"type": "volume"
 		},
-    {
-      "source": "devcontainer-dosbox-x-cache-${devcontainerId}",
-      "target": "/opt/dosbox-x",
-      "type": "volume"
-    }
+		{
+		"source": "devcontainer-dosbox-x-cache-${devcontainerId}",
+		"target": "/opt/dosbox-x",
+		"type": "volume"
+		}
 	]
 
 	// Features to add to the dev container. More info: https://containers.dev/features.

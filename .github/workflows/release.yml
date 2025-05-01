@@ -154,8 +154,8 @@ jobs:
 
       - name: Upload Custom Installer
         run: |
-          cp target/release/installer ./
-          mv installer ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64-installer
+          cp target/release/installer ./installer-1
+          mv installer-1 ${{ env.PROJECT_NAME }}-${{ needs.set-version.outputs.version }}-linux-x86_64-installer
 
       - name: Upload
         uses: actions/upload-artifact@v4
