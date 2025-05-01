@@ -1,12 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-    "bindings/wasm",
-    "disassembler",
-    "dosdisassm",
-    "installer",
-    "updater",
-]
+members = ["bindings/wasm", "disassembler", "dosdisassm", "installer"]
 version = "0.1.2"
 
 [profile.release]
