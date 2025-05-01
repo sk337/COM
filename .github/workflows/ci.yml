@@ -40,10 +40,9 @@ jobs:
       - name: Install Tarpaulin
         run: cargo install cargo-tarpaulin
 
-      - name: Run Coverage in disassembler/
-        working-directory: disassembler
+      - name: Run Coverage
         run: |
-          cargo tarpaulin --out Xml --output-dir target/coverage
+          cargo tarpaulin --out Xml --output-dir target/coverage -p disassembler --lib
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v4
